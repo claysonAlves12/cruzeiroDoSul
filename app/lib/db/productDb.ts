@@ -1,43 +1,44 @@
 // app/lib/db/productDb.ts
+
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
+import { Product } from '@/app/types/Product'
 import path from 'path';
 
-// Definindo o tipo da estrutura do banco de dados
 export type ProductData = {
-  products: { 
-    id: number;
-    codIdentification: string;
-    name: string; 
-    description: string;
-    stock: number;
-    price: number;
-    category?: string;
-    imageUrl?: string;
-    createdAt: string;
-    updatedAt: string;
-  }[];
+  products: Product[];
 };
 
 // Caminho para o arquivo JSON
 const productsFile = path.join(process.cwd(), 'app/lib/product.json');
 
-// Dados padrão
-const defaultProductData: ProductData = { products: [] };
-
 // Adaptador para manipular o arquivo JSON
 const productAdapter = new JSONFile<ProductData>(productsFile);
 
-// Instância do LowDB para produtos
-const productDb = new Low<ProductData>(productAdapter, defaultProductData);
+// Dados padrão para inicialização
+const defaultData: ProductData = { products: [] };
 
-// Inicialização do banco de dados
+// Instância do LowDB para produtos
+const productDb = new Low<ProductData>(productAdapter, defaultData);
+
+// Função para inicializar o banco de dados com estrutura padrão
 export async function initializeProductsDB() {
-  console.log("chamou")
+  console.log('Inicializando o banco de dados...');
+  console.log(productsFile, 'caminho');
+
+  // Ler o conteúdo do arquivo
   await productDb.read();
-  productDb.data ||= defaultProductData;
-  await productDb.write();
+
+  // Se o banco estiver vazio, inicializa com os dados padrão
+  if (!productDb.data || Object.keys(productDb.data).length === 0) {
+    console.log('Banco de dados vazio ou não encontrado. Criando estrutura padrão...');
+    productDb.data = defaultData; // Inicializa com os dados padrão
+    await productDb.write();
+  }
+
+  console.log('Banco de dados inicializado:', productDb.data);
   return productDb;
 }
 
+// Exporta a instância do banco de dados para uso em outras partes do app
 export { productDb };

@@ -25,7 +25,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log(body, 'itens recebidos')
     const newProduct = await addProduct(body);
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error: unknown) {
