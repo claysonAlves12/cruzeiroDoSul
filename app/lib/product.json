@@ -1,0 +1,28 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "codIdentification": "12345",
+      "name": "notebook",
+      "description": "Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo Este é um produto de exemploEste é um produto de exemplo Este é um produto de exemplo Este é um produto de exemplo",
+      "stock": 98,
+      "price": 999.99,
+      "category": "Eletrônicos",
+      "imageUrl": "https://t62533.vteximg.com.br/arquivos/ids/860117-1000-1000/notebook-samsung-book-np550xdakp3br-celeron-w11-2.jpg?v=638319343735800000",
+      "createdAt": "2024-11-18T14:39:36.550Z",
+      "updatedAt": "2024-11-18T15:44:08.981Z"
+    },
+    {
+      "id": 2,
+      "codIdentification": "12345",
+      "name": "Produto Exemplo",
+      "description": "Este é um produto de exemplo",
+      "stock": 100,
+      "price": 199.99,
+      "category": "Eletrônicos",
+      "imageUrl": "https://images.kabum.com.br/produtos/fotos/sync_mirakl/615577/Notebook-Gamer-Acer-Nitro-V-Intel-I7-Anv15-51-7037-16GB-RAM-SSD-512GB-15-6-Full-HD-RTX4050-Linux-Gutta_1725389199_gg.jpg",
+      "createdAt": "2024-11-18T14:39:52.655Z",
+      "updatedAt": "2024-11-18T18:22:59.518Z"
+    }
+  ]
+}
