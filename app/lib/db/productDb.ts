@@ -10,7 +10,7 @@ export type ProductData = {
 };
 
 // Caminho para o arquivo JSON
-const productsFile = path.join(process.cwd(), 'app/lib/product.json');
+const productsFile = path.join(process.cwd(), '../product.json');
 
 // Adaptador para manipular o arquivo JSON
 const productAdapter = new JSONFile<ProductData>(productsFile);
