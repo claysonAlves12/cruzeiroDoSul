@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addProduct, updateProduct, deleteProduct, getAllProducts, getProductById } from '@/app/services/productService';
+import { addProduct, updateProduct, deleteProduct, getAllProducts,/*  getProductById  */} from '@/app/services/productService';
 
 // Função auxiliar para lidar com erros
 function handleError(error: unknown) {
