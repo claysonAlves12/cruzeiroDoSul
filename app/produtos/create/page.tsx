@@ -60,7 +60,7 @@ const CreateProduct = () => {
       });
 
       if (res.ok) {
-        const createdProduct = await res.json();
+       
         alert('Produto criado com sucesso!');
         router.push('/produtos');
       } else {
