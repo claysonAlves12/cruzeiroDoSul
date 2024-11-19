@@ -39,7 +39,7 @@ const ProductManager = () => {
       
     };
     fetchCategories();
-  },[] );
+  },[toast] );
 
   const handleProductChange = (key: keyof typeof product, value: string | number) => {
     if (key === "category" && value === "new") {

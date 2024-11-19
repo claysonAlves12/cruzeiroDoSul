@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { IoAddCircle } from 'react-icons/io5';
 import Image from 'next/image';
 import { Product } from '@/app/types/Product';
-import { div } from 'framer-motion/client';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -180,17 +180,35 @@ const ProductsPage: React.FC = () => {
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-t">
                   <td className="px-4 py-2 text-sm text-gray-800 hidden lg:table-cell bg-blue-200">
-                  {product.imageUrl && (
-                    <div className='flex justify-center'>
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        width={144}
-                        height={64}
-                        className="object-cover rounded"
-                      />  
-                    </div>
-                  )}
+                    {product.imageUrl && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="cursor-pointer flex justify-center">
+                            <Image
+                              src={product.imageUrl}
+                              alt={product.name}
+                              width={144}
+                              height={64}
+                              className="object-cover rounded"
+                            />
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl">
+                          <DialogTitle className="text-center text-xl font-semibold mb-4">
+                            {product.name}
+                          </DialogTitle>
+                          <div className="flex justify-center">
+                            <Image
+                              src={product.imageUrl}
+                              alt={product.name}
+                              width={800} // Adjust the width to fit your modal size
+                              height={500} // Adjust the height to fit your modal size
+                              className="object-contain"
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-800 text-center bg-red-50">{product.name}</td>
                   <td className="px-4 py-2 text-sm text-gray-800 text-center bg-slate-100">{product.codIdentification}</td>
