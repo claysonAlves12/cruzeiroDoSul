@@ -9,8 +9,10 @@ export type ProductData = {
   products: Product[];
 };
 
-// Caminho para o arquivo JSON
-const productsFile = path.join(process.cwd(), '../product.json');
+
+// Caminho absoluto para o arquivo JSON
+const productsFile = path.join(__dirname, '../../../../../.../../app/lib/product.json');
+
 
 // Adaptador para manipular o arquivo JSON
 const productAdapter = new JSONFile<ProductData>(productsFile);
