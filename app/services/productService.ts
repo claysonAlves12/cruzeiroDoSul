@@ -1,88 +1,101 @@
-import { initializeProductsDB } from '../lib/db/productDb';
-import { ProductData } from '../lib/db/productDb'; // Tipo de dados de produto
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { db } from '@/lib/db/firebase'; // Certifique-se de apontar para sua configuração Firebase
+
+// Tipo para os dados do produto
+export interface Product {
+  id?: string; // O ID será gerado automaticamente pelo Firestore
+  name: string;
+  codIdentification: string;
+  description: string;
+  stock: number;
+  price: number;
+  category: string;
+  imageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Nome da coleção no Firestore
+const collectionName = 'products';
 
 // Função para adicionar um novo produto
-export async function addProduct(
-  product: Omit<ProductData['products'][0], 'id' | 'createdAt' | 'updatedAt'>
-) {
-  const db = await initializeProductsDB();
+export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) {
+  const productsRef = collection(db, collectionName);
 
-  const existingProductByCodIdentification = db.data?.products.find(
-    (p) => p.codIdentification === product.codIdentification
-  );
-  if (existingProductByCodIdentification) {
+  // Verificar se já existe produto com o mesmo código de identificação
+  const q = query(productsRef, where('codIdentification', '==', product.codIdentification));
+  const existingProductSnapshot = await getDocs(q);
+
+  if (!existingProductSnapshot.empty) {
     throw new Error('Produto com código de identificação já existe.');
-  }
-
-  const existingProductByName = db.data?.products.find((p) => p.name === product.name);
-  if (existingProductByName) {
-    throw new Error('Produto com este nome já existe.');
   }
 
   const newProduct = {
     ...product,
-    id: String(db.data?.products.length ? db.data.products[db.data.products.length - 1].id + 1 : 1),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  db.data?.products.push(newProduct);
-  await db.write();
-
-  return newProduct;
+  const docRef = await addDoc(productsRef, newProduct);
+  return { id: docRef.id, ...newProduct };
 }
 
 // Função para atualizar um produto
 export async function updateProduct(
-  id: number | string,
-  updatedData: Partial<Omit<ProductData['products'][0], 'id' | 'createdAt'>>
+  id: string,
+  updatedData: Partial<Omit<Product, 'id' | 'createdAt'>>
 ) {
-  const db = await initializeProductsDB();
+  const productRef = doc(db, collectionName, id);
 
-  const productIndex = db.data?.products.findIndex((p) => String(p.id) === String(id));
-  if (productIndex === undefined || productIndex < 0) {
+  const productSnapshot = await getDoc(productRef);
+  if (!productSnapshot.exists()) {
     throw new Error('Produto não encontrado.');
   }
 
   const updatedProduct = {
-    ...db.data!.products[productIndex],
+    ...productSnapshot.data(),
     ...updatedData,
     updatedAt: new Date().toISOString(),
   };
 
-  db.data!.products[productIndex] = updatedProduct;
-  await db.write();
-
-  return updatedProduct;
+  await updateDoc(productRef, updatedProduct);
+  return { id, ...updatedProduct };
 }
 
 // Função para excluir um produto
-export async function deleteProduct(id: number | string) {
-  const db = await initializeProductsDB();
+export async function deleteProduct(id: string) {
+  const productRef = doc(db, collectionName, id);
 
-  const index = db.data?.products.findIndex((p) => String(p.id) === String(id));
-  if (index === undefined || index < 0) {
+  const productSnapshot = await getDoc(productRef);
+  if (!productSnapshot.exists()) {
     throw new Error('Produto não encontrado.');
   }
 
-  const deletedProduct = db.data?.products.splice(index, 1);
-  await db.write();
-
-  return deletedProduct;
+  await deleteDoc(productRef);
+  return { id, ...productSnapshot.data() };
 }
 
 // Função para obter todos os produtos
 export async function getAllProducts() {
-  const db = await initializeProductsDB();
-  return db.data?.products || [];
+  const productsRef = collection(db, collectionName);
+  const snapshot = await getDocs(productsRef);
+
+  const products: Product[] = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Product[];
+
+  return products;
 }
 
 // Função para obter um produto pelo ID
-export async function getProductById(id: number | string) {
-  const db = await initializeProductsDB();
-  const product = db.data?.products.find((p) => String(p.id) === String(id));
-  if (!product) {
+export async function getProductById(id: string) {
+  const productRef = doc(db, collectionName, id);
+
+  const productSnapshot = await getDoc(productRef);
+  if (!productSnapshot.exists()) {
     throw new Error('Produto não encontrado.');
   }
-  return product;
+
+  return { id: productSnapshot.id, ...productSnapshot.data() } as Product;
 }

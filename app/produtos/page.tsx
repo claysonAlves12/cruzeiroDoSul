@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { IoAddCircle } from 'react-icons/io5';
 import Image from 'next/image';
 import { Product } from '@/app/types/Product';
+import { div } from 'framer-motion/client';
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [reductionQuantity, setReductionQuantity] = useState<number>(1);
+  const [reductionQuantity, setReductionQuantity] = useState<number>(0);
   const [filters, setFilters] = useState({
     category: '',
     name: '',
@@ -91,6 +92,11 @@ const ProductsPage: React.FC = () => {
         return;
       }
 
+      if (reductionQuantity === 0) {
+        alert('Você não pode vender ou usar 0 itens');
+        return;
+      }
+
       const response = await fetch(`/api/products`, {
         method: 'PUT',
         headers: {
@@ -101,6 +107,7 @@ const ProductsPage: React.FC = () => {
 
       if (response.ok) {
         alert('Estoque atualizado com sucesso');
+        setReductionQuantity(0)
         fetchProducts();
       } else {
         alert('Falha ao atualizar estoque');
@@ -150,8 +157,8 @@ const ProductsPage: React.FC = () => {
 
         {/* Products Table */}
         <div className="overflow-x-auto border-2 rounded-lg shadow-md">
-          <table className="min-w-full bg-white">
-            <thead className="bg-slate-100">
+          <table className="w-full bg-white">
+            <thead className="bg-slate-100 items-center justify-center">
               <tr>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
                   Imagem
@@ -161,7 +168,7 @@ const ProductsPage: React.FC = () => {
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
                   Categoria
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
+                <th className=" w-full bg-red-100 px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
                   Descrição
                 </th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Preço</th>
@@ -172,20 +179,22 @@ const ProductsPage: React.FC = () => {
             <tbody>
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-t">
-                  <td className="px-4 py-2 text-sm text-gray-800 hidden lg:table-cell">
+                  <td className="px-4 py-2 text-sm text-gray-800 hidden lg:table-cell bg-blue-200">
                   {product.imageUrl && (
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      width={144}
-                      height={64}
-                      className="object-cover rounded"
-                    />
+                    <div className='flex justify-center'>
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        width={144}
+                        height={64}
+                        className="object-cover rounded"
+                      />  
+                    </div>
                   )}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800">{product.name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-800 bg-slate-100">{product.codIdentification}</td>
-                  <td className="px-4 py-2 text-sm text-gray-800 bg-white hidden lg:table-cell">{product.category}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 text-center bg-red-50">{product.name}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 text-center bg-slate-100">{product.codIdentification}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 text-center bg-white hidden lg:table-cell">{product.category}</td>
                   <td className="px-4 py-2 text-sm text-gray-800 bg-slate-100 hidden lg:table-cell">
                     {product.description}
                   </td>
@@ -203,7 +212,7 @@ const ProductsPage: React.FC = () => {
                       />
                       <button
                         onClick={() => handleReduceStock(product.id)}
-                        className="px-3 py-1 mr-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition duration-300"
+                        className="px-3 py-1 mr-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition duration-300 w-full"
                       >
                         Vender/Usar
                       </button>

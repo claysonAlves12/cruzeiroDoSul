@@ -1,10 +1,17 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
+import CreateCategoryForm from './createCategoryForm';
+import CreateProductForm from './createProductForm';
 
-const CreateProduct = () => {
+const ProductManager = () => {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [product, setProduct] = useState({
     name: '',
     codIdentification: '',
@@ -14,44 +21,91 @@ const CreateProduct = () => {
     category: '',
     imageUrl: '',
   });
-  const [errors, setErrors] = useState({ price: '' });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/products/categories');
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data.categories.map((cat: { name: string }) => cat.name));
+        } else {
+          throw new Error('Failed to fetch categories');
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        toast({ open: true, description: `Erro ao carregar categorias: ${errorMessage}`, variant: 'destructive' });
+      }
+      
+    };
+    fetchCategories();
+  },[] );
 
-    if (name === 'price') {
-      // Formatar o preço e validar
-      const formattedPrice = formatCurrency(value);
-      setProduct((prev) => ({ ...prev, [name]: formattedPrice }));
-      validatePrice(formattedPrice);
+  const handleProductChange = (key: keyof typeof product, value: string | number) => {
+    if (key === "category" && value === "new") {
+      setIsCreatingCategory(true);
     } else {
-      setProduct((prev) => ({ ...prev, [name]: value }));
+      setProduct({ ...product, [key]: value });
     }
   };
-
-  const validatePrice = (value: string) => {
-    const isValid = /^\d+(\.\d{2}|\.\d{1}|,\d{2}|,\d{1})$/.test(value);
-    if (!isValid) {
-      setErrors((prev) => ({ ...prev, price: 'O preço deve estar no formato 0.00 ou 0,00.' }));
-    } else {
-      setErrors((prev) => ({ ...prev, price: '' }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Verificar erros antes de enviar
-    if (errors.price || !product.price) {
-      alert('Por favor, corrija os erros antes de continuar.');
+  
+  
+  const handleCategorySave = async () => {
+    if (!newCategoryName.trim()) {
+      toast({ open: true, description: 'Por favor, insira o nome da categoria.', variant: 'destructive' });
       return;
     }
 
     try {
-      const productData = {
-        ...product,
-        price: parseCurrency(product.price), // Converter para número antes de enviar
-      };
+      const res = await fetch('/api/products/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json(); 
+        throw new Error(errorData.error || 'Erro ao criar categoria'); 
+      }
+
+      const data = await res.json();
+      setCategories((prev) => [...prev, data.name]);
+      setNewCategoryName('');
+      setIsCreatingCategory(false);
+      toast({ open: true, description: 'Categoria criada com sucesso!', variant: 'success' });
+    } catch (error:unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ open: true, description: `Erro ao criar categoria: ${errorMessage}`, variant: 'destructive' });
+    }
+  };
+
+  const handleCategoryDelete = async (categoryName: string) => {
+    try {
+      const res = await fetch('/api/products/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: categoryName }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json(); 
+        throw new Error(errorData.error || 'Erro ao excluir categoria'); 
+      }
+
+      setCategories((prev) => prev.filter((cat) => cat !== categoryName));
+      setProduct((prev) => ({ ...prev, category: '' })); // Reset category if the deleted one was selected
+      toast({ open: true, description: 'Categoria excluída com sucesso!', variant: 'success' });
+    } catch (error:unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ open: true, description: `Erro ao excluir categoria: ${errorMessage}`, variant: 'destructive' });
+    }
+  };
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const productData = { ...product};
 
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -60,108 +114,44 @@ const CreateProduct = () => {
       });
 
       if (res.ok) {
-       
-        alert('Produto criado com sucesso!');
+        toast({ open: true, description: 'Produto criado com sucesso!', variant: 'success' });
         router.push('/produtos');
       } else {
         const error = await res.json();
-        alert(error.error || 'Erro ao criar produto');
+        toast({ open: true, description: error.error || 'Erro ao criar produto', variant: 'destructive' });
       }
-    } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao enviar dados');
+    } catch (error:unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ open: true, description: `error ao criar o produto: ${errorMessage}`, variant: 'destructive' });
     }
   };
 
-  // Formatar um valor para moeda BRL
-  const formatCurrency = (value: string) => {
-    const numericValue = value.replace(/\D/g, ''); // Remove qualquer caractere não numérico
-    const formatted = (Number(numericValue) / 100).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-    return formatted.replace('R$', '').trim(); // Remove o símbolo "R$" para exibição no campo
-  };
-
-  // Converter o valor do campo para número antes de enviar
-  const parseCurrency = (value: string) => {
-    return Number(value.replace(/\./g, '').replace(',', '.')); // Converte de "1.234,56" para 1234.56
-  };
+  const backProductHome = async() =>{
+    router.push('/produtos')
+  }
 
   return (
-    <div className="max-w-lg mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Criar Produto</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          name="name"
-          placeholder="Nome do Produto"
-          value={product.name}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-          required
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      {isCreatingCategory ? (
+        <CreateCategoryForm
+          newCategoryName={newCategoryName}
+          setNewCategoryName={setNewCategoryName}
+          onSave={handleCategorySave}
+          onCancel={() => setIsCreatingCategory(false)}
         />
-        <input
-          type="text"
-          name="codIdentification"
-          placeholder="Código de Identificação"
-          value={product.codIdentification}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-          required
+      ) : (
+        <CreateProductForm
+          product={product}
+          categories={categories}
+          onProductChange={handleProductChange}
+          onSubmit={handleProductSubmit}
+          onDeleteCategory={handleCategoryDelete}
+          onCreatingCategory={setIsCreatingCategory}
+          onBackProductHome={backProductHome}
         />
-        <textarea
-          name="description"
-          placeholder="Descrição"
-          value={product.description}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-        />
-        <input
-          type="number"
-          name="stock"
-          placeholder="Estoque"
-          value={product.stock}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-          required
-        />
-        <input
-          type="text"
-          name="price"
-          placeholder="Preço (ex: 0.00 ou 0,00)"
-          value={product.price}
-          onChange={handleChange}
-          className={`w-full px-4 py-2 border rounded ${errors.price ? 'border-red-500' : ''}`}
-          required
-        />
-        {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
-        <input
-          type="text"
-          name="category"
-          placeholder="Categoria"
-          value={product.category}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-          required
-        />
-        <input
-          type="url"
-          name="imageUrl"
-          placeholder="URL da Imagem (opcional)"
-          value={product.imageUrl}
-          onChange={handleChange}
-          className="w-full px-4 py-2 border rounded"
-        />
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition duration-300"
-        >
-          Criar Produto
-        </button>
-      </form>
+      )}
     </div>
   );
 };
 
-export default CreateProduct;
+export default ProductManager;
