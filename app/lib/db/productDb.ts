@@ -1,18 +1,25 @@
-// app/lib/db/productDb.ts
-
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
-import { Product } from '@/app/types/Product'
+import { Product } from '@/app/types/Product';
 import path from 'path';
+import fs from 'fs/promises';
 
 export type ProductData = {
   products: Product[];
 };
 
-
 // Caminho absoluto para o arquivo JSON
-const productsFile = path.join(__dirname, '../../../../../.../../app/lib/product.json');
+const productsFile = path.join(__dirname, '../../../product.json');
 
+// Verifica e cria o arquivo JSON se ele não existir
+async function ensureFileExists(filePath: string, defaultData: ProductData) {
+  try {
+    await fs.access(filePath); // Verifica se o arquivo existe
+  } catch {
+    console.log('Arquivo JSON não encontrado. Criando novo arquivo...');
+    await fs.writeFile(filePath, JSON.stringify(defaultData, null, 2), 'utf-8'); // Cria o arquivo
+  }
+}
 
 // Adaptador para manipular o arquivo JSON
 const productAdapter = new JSONFile<ProductData>(productsFile);
@@ -26,7 +33,10 @@ const productDb = new Low<ProductData>(productAdapter, defaultData);
 // Função para inicializar o banco de dados com estrutura padrão
 export async function initializeProductsDB() {
   console.log('Inicializando o banco de dados...');
-  console.log(productsFile, 'caminho');
+  console.log(`Caminho do arquivo JSON: ${productsFile}`);
+
+  // Garante que o arquivo JSON exista
+  await ensureFileExists(productsFile, defaultData);
 
   // Ler o conteúdo do arquivo
   await productDb.read();

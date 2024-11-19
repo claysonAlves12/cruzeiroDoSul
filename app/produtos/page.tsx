@@ -140,7 +140,7 @@ const ProductsPage: React.FC = () => {
             ))}
           </div>
           <div
-            onClick={() => router.push('/products/create')}
+            onClick={() => router.push('/produtos/create')}
             className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition duration-300 flex gap-2 items-center cursor-pointer flex-1"
           >
             <IoAddCircle className="w-6 h-6" />
@@ -189,7 +189,7 @@ const ProductsPage: React.FC = () => {
                   <td className="px-4 py-2 text-sm text-gray-800 bg-slate-100 hidden lg:table-cell">
                     {product.description}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800">R$ {product.price.toFixed(2)}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800">R$ {product.price}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{product.stock} Un.</td>
                   <td className="px-4 py-2 text-sm flex flex-col gap-2">
                     <div className="flex">

@@ -3,11 +3,10 @@ import { addProduct, updateProduct, deleteProduct, getAllProducts,/*  getProduct
 
 // Função auxiliar para lidar com erros
 function handleError(error: unknown) {
-  // Verifica se o erro é uma instância de Error
   if (error instanceof Error) {
-    return error.message; // Retorna a mensagem do erro
+    return error.message; 
   }
-  return 'Erro desconhecido'; // Caso contrário, retorna uma mensagem padrão
+  return 'Erro desconhecido'; 
 }
 
 // GET: Retorna todos os produtos
