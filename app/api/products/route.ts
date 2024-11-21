@@ -1,74 +1,44 @@
 import { NextResponse } from 'next/server';
 import {
-  getProductById,
   addProduct,
   updateProduct,
   deleteProduct,
+  getAllProducts,
 } from '@/app/services/productService';
 
 // Função auxiliar para lidar com erros
 function handleError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Erro desconhecido';
+  return error instanceof Error ? error.message : 'Erro desconhecido';
 }
 
-// GET: Retorna o produto pelo ID
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// GET: Retorna todos os produtos
+export async function GET() {
   try {
-    const { id } = await params; // Resolva a promessa para obter o ID
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID do produto é obrigatório.' },
-        { status: 400 }
-      );
-    }
-
-    const product = await getProductById(id); // Busca o produto pelo ID
-
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Produto não encontrado.' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(product); // Retorna o produto em formato JSON
-  } catch (error) {
-    return NextResponse.json(
-      { error: handleError(error) },
-      { status: 500 }
-    );
+    const products = await getAllProducts(); // Busca todos os produtos
+    return NextResponse.json(products); // Retorna os produtos
+  } catch (error: unknown) {
+    const errorMessage = handleError(error);
+    return NextResponse.json({ error: errorMessage }, { status: 500 }); // Erro de servidor
   }
 }
 
 // POST: Adiciona um novo produto
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const newProduct = await addProduct(body);
-    return NextResponse.json(newProduct, { status: 201 });
+    const body = await req.json(); // Lê o corpo da requisição
+    const newProduct = await addProduct(body); // Adiciona o novo produto
+    return NextResponse.json(newProduct, { status: 201 }); // Retorna o produto criado
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: handleError(error) },
-      { status: 400 }
-    );
+    const errorMessage = handleError(error);
+    return NextResponse.json({ error: errorMessage }, { status: 400 }); // Erro de validação
   }
 }
 
 // PUT: Atualiza um produto existente
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request) {
   try {
-    const { id } = await params; // Resolva a promessa para obter o ID
-    const body = await req.json();
+    const body = await req.json(); // Lê o corpo da requisição
+    const { id, ...updatedProduct } = body; // Extrai o ID e os dados atualizados
 
     if (!id) {
       return NextResponse.json(
@@ -77,23 +47,18 @@ export async function PUT(
       );
     }
 
-    const updatedProduct = await updateProduct(id, body);
-    return NextResponse.json(updatedProduct);
+    const updated = await updateProduct(id, updatedProduct); // Atualiza o produto
+    return NextResponse.json(updated); // Retorna o produto atualizado
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: handleError(error) },
-      { status: 404 }
-    );
+    const errorMessage = handleError(error);
+    return NextResponse.json({ error: errorMessage }, { status: 404 }); // Produto não encontrado
   }
 }
 
 // DELETE: Exclui um produto
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request) {
   try {
-    const { id } = await params; // Resolva a promessa para obter o ID
+    const { id } = await req.json(); // Lê o ID do corpo da requisição
 
     if (!id) {
       return NextResponse.json(
@@ -102,12 +67,10 @@ export async function DELETE(
       );
     }
 
-    const deletedProduct = await deleteProduct(id);
-    return NextResponse.json(deletedProduct);
+    const deletedProduct = await deleteProduct(id); // Exclui o produto
+    return NextResponse.json(deletedProduct); // Retorna o produto excluído
   } catch (error: unknown) {
-    return NextResponse.json(
-      { error: handleError(error) },
-      { status: 404 }
-    );
+    const errorMessage = handleError(error);
+    return NextResponse.json({ error: errorMessage }, { status: 404 }); // Produto não encontrado
   }
 }
