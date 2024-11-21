@@ -31,6 +31,7 @@ const ProductsPage: React.FC = () => {
       const data = await response.json();
       setProducts(data);
       setFilteredProducts(data);
+      console.log(data)
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
     }
@@ -40,32 +41,29 @@ const ProductsPage: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Apply filters
   const applyFilters = useCallback(() => {
-    const { category, name, codIdentification, minPrice, maxPrice, minStock, maxStock } = filters;
-
+    const { category, name, codIdentification, minStock, maxStock } = filters;
+  
     const filtered = products.filter((product) => {
       const matchesCategory = category ? product.category?.toLowerCase().includes(category.toLowerCase()) : true;
       const matchesName = name ? product.name.toLowerCase().includes(name.toLowerCase()) : true;
       const matchesCode = codIdentification ? product.codIdentification.includes(codIdentification) : true;
-      const matchesMinPrice = minPrice ? product.price >= parseFloat(minPrice) : true;
-      const matchesMaxPrice = maxPrice ? product.price <= parseFloat(maxPrice) : true;
       const matchesMinStock = minStock ? product.stock >= parseInt(minStock, 10) : true;
       const matchesMaxStock = maxStock ? product.stock <= parseInt(maxStock, 10) : true;
-
+  
       return (
         matchesCategory &&
         matchesName &&
         matchesCode &&
-        matchesMinPrice &&
-        matchesMaxPrice &&
         matchesMinStock &&
         matchesMaxStock
       );
     });
-
+  
     setFilteredProducts(filtered);
   }, [filters, products]);
+  
+  
 
   useEffect(() => {
     applyFilters();
@@ -117,21 +115,41 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteProduct = async (id: string) => {
+    const confirmDelete = confirm("Tem certeza que deseja excluir este produto?");
+    if (!confirmDelete) return;
+  
+    try {
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+      });
+  
+      if (response.ok) {
+        alert("Produto excluído com sucesso!");
+        fetchProducts(); // Atualiza a lista de produtos
+      } else {
+        alert("Erro ao excluir o produto.");
+      }
+    } catch (error) {
+      console.error("Erro ao excluir o produto:", error);
+      alert("Ocorreu um erro ao tentar excluir o produto.");
+    }
+  };
+  
+
   return (
     <div className="min-h-screen w-screen bg-white flex flex-col">
       <header className="bg-blue-600 text-white py-4 px-6">
         <h1 className="text-3xl font-semibold text-center">Lista de Produtos</h1>
       </header>
       <main className="flex-grow p-6 overflow-y-auto">
-        {/* Filters and Add Button */}
-        <div className="flex flex-col gap-4 items-center justify-between mb-6 sm:flex-row">
-          <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 w-full">
+     
+        <div className="flex flex-col gap-4 items-center justify-center mb-6 sm:flex-row">
+          <div className="grid grid-cols-2 gap-4  sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6">
             {[
               { name: 'category', placeholder: 'Filtrar por Categoria' },
               { name: 'name', placeholder: 'Filtrar por Nome' },
               { name: 'codIdentification', placeholder: 'Filtrar por Código' },
-              { name: 'minPrice', placeholder: 'Preço Mín.', type: 'number' },
-              { name: 'maxPrice', placeholder: 'Preço Máx.', type: 'number' },
               { name: 'minStock', placeholder: 'Estoque Mín.', type: 'number' },
               { name: 'maxStock', placeholder: 'Estoque Máx.', type: 'number' },
             ].map((filter) => (
@@ -141,17 +159,19 @@ const ProductsPage: React.FC = () => {
                 name={filter.name}
                 value={filters[filter.name as keyof typeof filters]}
                 onChange={handleFilterChange}
-                className="border px-4 py-2 rounded-md"
+                className="border px-4 py-2 rounded-md w-full"
                 placeholder={filter.placeholder}
               />
             ))}
-          </div>
-          <div
-            onClick={() => router.push('/produtos/create')}
-            className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition duration-300 flex gap-2 items-center cursor-pointer flex-1"
-          >
-            <IoAddCircle className="w-6 h-6" />
-            <p>Produto</p>
+
+            <div
+              onClick={() => router.push('/produtos/create')}
+              className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition 
+              duration-300 flex gap-2 items-center cursor-pointer"
+            >
+              <IoAddCircle className="w-6 h-6" />
+              <p>Produto</p>
+            </div>
           </div>
         </div>
 
@@ -168,7 +188,7 @@ const ProductsPage: React.FC = () => {
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
                   Categoria
                 </th>
-                <th className=" w-full bg-red-100 px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
+                <th className=" w-full px-4 py-2 text-left text-sm font-medium text-gray-700 hidden lg:table-cell">
                   Descrição
                 </th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Preço</th>
@@ -179,44 +199,72 @@ const ProductsPage: React.FC = () => {
             <tbody>
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-t">
-                  <td className="px-4 py-2 text-sm text-gray-800 hidden lg:table-cell bg-blue-200">
-                    {product.imageUrl && (
+                  <td className="px-4 py-2 text-sm text-gray-800 hidden lg:table-cell bg-slate-100">
+                    { product.imageUrl? (
+                     <Dialog>
+                      <DialogTrigger asChild>
+                        <div className="cursor-pointer flex justify-center">
+                          <Image
+                            src={product.imageUrl}
+                            alt={product.name || 'Imagem padrão'}
+                            width={144}
+                            height={64}
+                            className="object-cover rounded"
+                          />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogTitle className="text-center text-xl font-semibold mb-4">
+                          {product.name}
+                        </DialogTitle>
+                        <div className="flex justify-center">
+                          <Image
+                           src={product.imageUrl}
+                           alt={product.name || 'Imagem padrão'}
+                           width={600}
+                           height={500}
+                           className="object-contain"
+                          />
+                        </div>
+                      </DialogContent>
+                     </Dialog>
+                    ) : (
                       <Dialog>
-                        <DialogTrigger asChild>
-                          <div className="cursor-pointer flex justify-center">
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              width={144}
-                              height={64}
-                              className="object-cover rounded"
-                            />
-                          </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl">
-                          <DialogTitle className="text-center text-xl font-semibold mb-4">
-                            {product.name}
-                          </DialogTitle>
-                          <div className="flex justify-center">
-                            <Image
-                              src={product.imageUrl}
-                              alt={product.name}
-                              width={800} // Adjust the width to fit your modal size
-                              height={500} // Adjust the height to fit your modal size
-                              className="object-contain"
-                            />
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <DialogTrigger asChild>
+                        <div className="cursor-pointer flex justify-center">
+                          <Image
+                            src='/semFoto.png'
+                            alt={product.name || 'Imagem padrão'}
+                            width={144}
+                            height={64}
+                            className="object-cover rounded"
+                          />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogTitle className="text-center text-xl font-semibold mb-4">
+                          {product.name}
+                        </DialogTitle>
+                        <div className="flex justify-center">
+                          <Image
+                           src='/semFoto.png'
+                           alt={product.name || 'Imagem padrão'}
+                           width={600}
+                           height={500}
+                           className="object-contain"
+                          />
+                        </div>
+                      </DialogContent>
+                     </Dialog>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800 text-center bg-red-50">{product.name}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 text-center">{product.name}</td>
                   <td className="px-4 py-2 text-sm text-gray-800 text-center bg-slate-100">{product.codIdentification}</td>
                   <td className="px-4 py-2 text-sm text-gray-800 text-center bg-white hidden lg:table-cell">{product.category}</td>
                   <td className="px-4 py-2 text-sm text-gray-800 bg-slate-100 hidden lg:table-cell">
                     {product.description}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800">R$ {product.price}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800">{product.price}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{product.stock} Un.</td>
                   <td className="px-4 py-2 text-sm flex flex-col gap-2">
                     <div className="flex">
@@ -232,15 +280,23 @@ const ProductsPage: React.FC = () => {
                         onClick={() => handleReduceStock(product.id)}
                         className="px-3 py-1 mr-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition duration-300 w-full"
                       >
-                        Vender/Usar
+                        VenderUsar
                       </button>
                     </div>
-                    <button
-                      onClick={() => router.push(`/produtos/${product.id}`)}
-                      className="px-3 py-1 text-white bg-orange-500 rounded-md hover:bg-orange-600 transition duration-300"
-                    >
-                      Editar
-                    </button>
+                    <div className='flex w-full gap-2'>
+                      <button
+                        onClick={() => router.push(`/produtos/${product.id}`)}
+                        className="px-3 py-1 text-white bg-orange-500 rounded-md hover:bg-orange-600 transition duration-300 w-full"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="px-3 py-1 text-white bg-red-500 rounded-md hover:bg-red-600 transition duration-300 w-full"
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

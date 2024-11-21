@@ -101,11 +101,32 @@ const ProductManager = () => {
     }
   };
 
+  const formatCurrency = (value: string | number): string => {
+    // Converter valor para número
+    const numericValue =
+      typeof value === 'string'
+        ? parseFloat(value.replace(/[^0-9.-]/g, '')) / 100 // Remove caracteres não numéricos
+        : value;
+  
+    // Verificar se é um número válido, caso contrário usar 0
+    const validValue = isNaN(numericValue) || numericValue < 0 ? 0 : numericValue;
+  
+    // Formatar como moeda brasileira
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(validValue);
+  };
+  
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const productData = { ...product};
+      const formattedPrice = formatCurrency(product.price as string | number);
+
+      // Prepara os dados do produto para envio
+      const productData = { 
+        ...product, 
+        price: formattedPrice // Garante que o preço seja formatado como "R$ 1.500,00"
+      };
 
       const res = await fetch('/api/products', {
         method: 'POST',

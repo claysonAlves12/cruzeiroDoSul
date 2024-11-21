@@ -3,6 +3,7 @@
 import React from 'react';
 import { ImBin2 } from "react-icons/im";
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface CreateProductFormProps {
   product: {
@@ -21,6 +22,16 @@ interface CreateProductFormProps {
   onCreatingCategory: (value: boolean) => void; 
   onBackProductHome: () => void;
 }
+
+const formatCurrency = (value: string | number): string => {
+  const numericValue = typeof value === 'string' ? parseFloat(value.replace(/\D/g, '')) / 100 : value;
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+};
+
+const parseCurrency = (formattedValue: string): number => {
+  return parseFloat(formattedValue.replace(/\D/g, '')) / 100; // Remove todos os caracteres não numéricos e ajusta a casa decimal
+};
+
 
 const CreateProductForm: React.FC<CreateProductFormProps> = ({
   product,
@@ -46,7 +57,7 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-2 ">
       <div className='flex flex-col gap-1'>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          Nome do Produto
+          Nome do Produto *
         </label>
         <input
           type="text"
@@ -64,7 +75,7 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
           htmlFor="codIdentification"
           className="block text-sm font-medium text-gray-700"
         >
-          Código de Identificação
+          Código de Identificação *
         </label>
         <input
           type="text"
@@ -81,7 +92,7 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
     <div className=' p-2 flex flex-col gap-1'>
 
       <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-        Descrição
+        Descrição (opcional)
       </label>
       <textarea
         id="description"
@@ -102,7 +113,7 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6  p-2">
       <div>
         <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
-          Estoque
+          Estoque *
         </label>
         <input
           type="number"
@@ -117,23 +128,27 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
 
       <div>
         <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-          Preço
+          Preço (opcional)
         </label>
         <input
           type="text"
           id="price"
           name="price"
-          value={product.price}
-          onChange={(e) => onProductChange('price', e.target.value)}
+          value={formatCurrency(product.price || 0)} // Exibe o valor formatado
+          onChange={(e) => {
+            const numericValue = parseCurrency(e.target.value);
+            onProductChange('price', numericValue);
+          }}
           className="block w-full rounded-md border-2 border-zinc-200 p-2"
-          required
+          
         />
+
       </div>
 
       <div className='flex flex-col gap-2'>
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            Categoria
+            Categoria (opcional)
           </label>
           <select
             id="category"
@@ -148,7 +163,7 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
               }
             }}
             className="block w-full rounded-md p-3 cursor-pointer border"
-            required
+            
           >
             <option value="" disabled>
               Selecione ou Crie
@@ -175,19 +190,34 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({
       </div>
     </div>
 
-    <div className=' p-2'>
-      <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-        URL da Imagem (opcional)
-      </label>
-      <input
-        type="url"
-        id="imageUrl"
-        name="imageUrl"
-        value={product.imageUrl}
-        onChange={(e) => onProductChange('imageUrl', e.target.value)}
-        className="block w-full rounded-md border-2 border-zinc-200 p-2"
+    <div className='p-2 flex items-center gap-2'>
+     
+      <Image
+        src={product.imageUrl?.trim() !== '' ? product.imageUrl : '/semFoto.png'}
+        alt="Imagem do produto"
+        width={128} // Ajuste conforme necessário
+        height={128} // Ajuste conforme necessário
+        className="object-cover rounded-md border"
+        placeholder="blur" // Opcional: Adiciona um efeito de carregamento
+        blurDataURL="/semFoto.png" // Opcional: Para o carregamento de imagem padrão
       />
+      
+      <div className='w-full'>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
+          URL da Imagem (opcional)
+        </label>
+        <input
+          type="url"
+          id="imageUrl"
+          name="imageUrl"
+          value={product.imageUrl || ''}
+          onChange={(e) => onProductChange('imageUrl', e.target.value)}
+          className="block w-full rounded-md border-2 border-zinc-200 p-2"
+        />
+      </div>
+      
     </div>
+
 
     <div className="flex justify-between gap-4">
       <button

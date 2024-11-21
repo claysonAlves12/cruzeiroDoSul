@@ -5,7 +5,7 @@ export interface Product {
   codIdentification: string;
   description: string;
   stock: number;
-  price: number;
+  price: string;
   category: string;
   imageUrl?: string;
   createdAt: string;

@@ -1,10 +1,12 @@
 'use client'
 
+import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const router = useRouter();
 
   // O tipo correto para eventos de formulários é React.FormEvent
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,6 +51,13 @@ export default function Home() {
             className="w-full py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Entrar
+          </button>
+
+          <button
+            onClick={() => router.push(`/produtos`)}
+            className="px-3 py-1 text-white bg-orange-500 rounded-md hover:bg-orange-600 transition duration-300 w-full"
+          >
+            Produto test
           </button>
         </form>
       </div>

@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server';
 import {
   getProductById,
-  addProduct,
   updateProduct,
   deleteProduct,
 } from '@/app/services/productService';
 
 // Função auxiliar para lidar com erros
 function handleError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Erro desconhecido';
+  return error instanceof Error ? error.message : 'Erro desconhecido';
 }
 
+// Tipo corrigido para o contexto da rota
+type RouteContext = { params: Promise<{ id: string }> };
+
 // GET: Retorna o produto pelo ID
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, context: RouteContext) {
+  let product = null; // Variável para armazenar o resultado
   try {
-    const { id } = await params; // Resolva a promessa para obter o ID
+    const { id } = await context.params; // Aguarde a resolução do `params`
 
     if (!id) {
       return NextResponse.json(
@@ -29,7 +26,7 @@ export async function GET(
       );
     }
 
-    const product = await getProductById(id); // Busca o produto pelo ID
+    product = await getProductById(id); // Chamada da promessa
 
     if (!product) {
       return NextResponse.json(
@@ -38,36 +35,26 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(product); // Retorna o produto em formato JSON
+    return NextResponse.json(product); // Retorna o produto se encontrado
   } catch (error) {
     return NextResponse.json(
       { error: handleError(error) },
       { status: 500 }
     );
+  } finally {
+    if (product) {
+      console.log(`Produto ${product.id} foi retornado com sucesso.`);
+    } else {
+      console.log('Nenhum produto foi encontrado ou ocorreu um erro.');
+    }
+    console.log('Finalização da execução da requisição GET.');
   }
 }
 
-// POST: Adiciona um novo produto
-export async function POST(req: Request) {
+// PUT: Atualiza um produto pelo ID
+export async function PUT(req: Request, context: RouteContext) {
   try {
-    const body = await req.json();
-    const newProduct = await addProduct(body);
-    return NextResponse.json(newProduct, { status: 201 });
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: handleError(error) },
-      { status: 400 }
-    );
-  }
-}
-
-// PUT: Atualiza um produto existente
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params; // Resolva a promessa para obter o ID
+    const { id } = await context.params; // Aguarde a resolução do `params`
     const body = await req.json();
 
     if (!id) {
@@ -79,7 +66,7 @@ export async function PUT(
 
     const updatedProduct = await updateProduct(id, body);
     return NextResponse.json(updatedProduct);
-  } catch (error: unknown) {
+  } catch (error) {
     return NextResponse.json(
       { error: handleError(error) },
       { status: 404 }
@@ -87,13 +74,10 @@ export async function PUT(
   }
 }
 
-// DELETE: Exclui um produto
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE: Exclui um produto pelo ID
+export async function DELETE(req: Request, context: RouteContext) {
   try {
-    const { id } = await params; // Resolva a promessa para obter o ID
+    const { id } = await context.params; // Aguarde a resolução do `params`
 
     if (!id) {
       return NextResponse.json(
@@ -104,7 +88,7 @@ export async function DELETE(
 
     const deletedProduct = await deleteProduct(id);
     return NextResponse.json(deletedProduct);
-  } catch (error: unknown) {
+  } catch (error) {
     return NextResponse.json(
       { error: handleError(error) },
       { status: 404 }
