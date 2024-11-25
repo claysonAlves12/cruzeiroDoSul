@@ -23,12 +23,21 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'up
   const productsRef = collection(db, collectionName);
 
   // Verificar se já existe produto com o mesmo código de identificação
+  const n = query(productsRef, where('name', '==', product.name));
+  const existingProductSnapshotName = await getDocs(n);
+
   const q = query(productsRef, where('codIdentification', '==', product.codIdentification));
   const existingProductSnapshot = await getDocs(q);
+
 
   if (!existingProductSnapshot.empty) {
     throw new Error('Produto com código de identificação já existe.');
   }
+
+  if (!existingProductSnapshotName.empty) {
+    throw new Error('Produto com o nome já existe.');
+  }
+
 
   const newProduct = {
     ...product,

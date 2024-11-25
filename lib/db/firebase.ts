@@ -1,21 +1,23 @@
 // firebase.ts
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDxiMFYZzbt4AOa-SH_ridSCUyAVg61ZJc",
-  authDomain: "controledeestoque-2615f.firebaseapp.com",
-  projectId: "controledeestoque-2615f",
-  storageBucket: "controledeestoque-2615f.firebasestorage.app",
-  messagingSenderId: "157081444483",
-  appId: "1:157081444483:web:90d466da1108480915bbb6",
-  measurementId: "G-PCD7EV5EFQ"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
-// Inicialize o Firebase
-const app = initializeApp(firebaseConfig);
+// Inicialize o Firebase apenas se ainda não foi inicializado
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Inicialize o Firestore
+// Inicialize o Firestore e Auth
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { db };
+export { db, auth };

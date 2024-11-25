@@ -3,11 +3,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoAddCircle } from 'react-icons/io5';
+import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { Product } from '@/app/types/Product';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 
 const ProductsPage: React.FC = () => {
+  const { toast } = useToast();
+  const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [reductionQuantity, setReductionQuantity] = useState<number>(0);
@@ -31,11 +36,11 @@ const ProductsPage: React.FC = () => {
       const data = await response.json();
       setProducts(data);
       setFilteredProducts(data);
-      console.log(data)
-    } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+    } catch (error:unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ open: true, description: `Erro ao buscar produtos: ${errorMessage}`, variant: 'destructive' });
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchProducts();
@@ -63,8 +68,6 @@ const ProductsPage: React.FC = () => {
     setFilteredProducts(filtered);
   }, [filters, products]);
   
-  
-
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
@@ -80,18 +83,18 @@ const ProductsPage: React.FC = () => {
     try {
       const productToUpdate = products.find((product) => product.id === id);
       if (!productToUpdate) {
-        alert('Produto não encontrado!');
+        toast({ open: true, description: 'Produto não encontrado!', variant: 'destructive' });
         return;
       }
 
       const newStock = productToUpdate.stock - reductionQuantity;
       if (newStock < 0) {
-        alert('Quantidade de venda/uso maior do que o estoque disponível!');
+        toast({ open: true, description: 'Quantidade de venda ou uso maior do que o estoque disponível!', variant: 'destructive' });
         return;
       }
 
       if (reductionQuantity === 0) {
-        alert('Você não pode vender ou usar 0 itens');
+        toast({ open: true, description: 'Você não pode vender ou usar 0 itens', variant: 'destructive' });
         return;
       }
 
@@ -104,35 +107,71 @@ const ProductsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        alert('Estoque atualizado com sucesso');
+        toast({ open: true, description: 'Estoque atualizado com sucesso', variant: 'success' });
         setReductionQuantity(0)
         fetchProducts();
       } else {
-        alert('Falha ao atualizar estoque');
+        toast({ open: true, description: 'Falha ao atualizar estoque', variant: 'destructive' });
       }
-    } catch (error) {
-      console.error('Erro ao reduzir o estoque:', error);
+    } catch (error:unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ open: true, description: `Erro ao reduzir o estoque: ${errorMessage}`, variant: 'destructive' });
     }
   };
 
+  interface ConfirmDialogProps {
+    isOpen: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+    title: string;
+    description: string;
+  }
+
+  const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ isOpen, onConfirm, onCancel, title, description }) => {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+        <DialogContent>
+          <DialogTitle>{title}</DialogTitle>
+          <p className="text-sm text-gray-600 mt-2">{description}</p>
+          <div className="flex justify-end mt-4 gap-4">
+            <Button variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={onConfirm}>
+              Confirmar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+
   const handleDeleteProduct = async (id: string) => {
-    const confirmDelete = confirm("Tem certeza que deseja excluir este produto?");
-    if (!confirmDelete) return;
-  
+    setCurrentProductId(id);
+    setConfirmDialogOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!currentProductId) return;
+
     try {
-      const response = await fetch(`/api/products/${id}`, {
+      const response = await fetch(`/api/products/${currentProductId}`, {
         method: 'DELETE',
       });
-  
+
       if (response.ok) {
-        alert("Produto excluído com sucesso!");
-        fetchProducts(); // Atualiza a lista de produtos
+        toast({ description: 'Produto excluído com sucesso!', variant: 'success' });
+        fetchProducts();
       } else {
-        alert("Erro ao excluir o produto.");
+        toast({ description: 'Erro ao excluir o produto.', variant: 'destructive' });
       }
-    } catch (error) {
-      console.error("Erro ao excluir o produto:", error);
-      alert("Ocorreu um erro ao tentar excluir o produto.");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast({ description: `Erro ao excluir o produto: ${errorMessage}`, variant: 'destructive' });
+    } finally {
+      setConfirmDialogOpen(false);
+      setCurrentProductId(null);
     }
   };
   
@@ -145,7 +184,7 @@ const ProductsPage: React.FC = () => {
       <main className="flex-grow p-6 overflow-y-auto">
      
         <div className="flex flex-col gap-4 items-center justify-center mb-6 sm:flex-row">
-          <div className="grid grid-cols-2 gap-4  sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4  sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-7">
             {[
               { name: 'category', placeholder: 'Filtrar por Categoria' },
               { name: 'name', placeholder: 'Filtrar por Nome' },
@@ -171,6 +210,15 @@ const ProductsPage: React.FC = () => {
             >
               <IoAddCircle className="w-6 h-6" />
               <p>Produto</p>
+            </div>
+
+            <div
+              onClick={() => router.push('/users')}
+              className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition 
+              duration-300 flex gap-2 items-center cursor-pointer"
+            >
+              <IoAddCircle className="w-6 h-6" />
+              <p>Criar Usuario</p>
             </div>
           </div>
         </div>
@@ -267,7 +315,7 @@ const ProductsPage: React.FC = () => {
                   <td className="px-4 py-2 text-sm text-gray-800">{product.price}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{product.stock} Un.</td>
                   <td className="px-4 py-2 text-sm flex flex-col gap-2">
-                    <div className="flex">
+                    <div className="flex w-52">
                       <input
                         type="number"
                         value={reductionQuantity}
@@ -280,7 +328,7 @@ const ProductsPage: React.FC = () => {
                         onClick={() => handleReduceStock(product.id)}
                         className="px-3 py-1 mr-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition duration-300 w-full"
                       >
-                        VenderUsar
+                        Vender ou Usar
                       </button>
                     </div>
                     <div className='flex w-full gap-2'>
@@ -303,6 +351,14 @@ const ProductsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        <ConfirmDialog
+          isOpen={isConfirmDialogOpen}
+          onConfirm={confirmDeleteProduct}
+          onCancel={() => setConfirmDialogOpen(false)}
+          title="Confirmação de Exclusão"
+          description="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita."
+        />
       </main>
       <footer className="bg-gray-200 text-center py-4">
         <p className="text-sm text-gray-600">
