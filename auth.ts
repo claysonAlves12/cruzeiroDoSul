@@ -66,5 +66,5 @@ export const authOptions: AuthOptions = {
     },
   },
 
-  secret: process.env.AUTH_SECRET,
+  secret: "lduR2tm4If7E7hflqmWP7UC/E9jxNNk8zpff1FWAFOs=",
 };
