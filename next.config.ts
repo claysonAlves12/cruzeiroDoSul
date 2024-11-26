@@ -1,4 +1,5 @@
-import type { NextConfig } from "next";
+import { NextConfig } from 'next';
+import { Configuration } from 'webpack';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -6,14 +7,27 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**', // Permite todos os domínios com HTTPS
+        hostname: '**',
       },
       {
         protocol: 'http',
-        hostname: '**', // Permite todos os domínios com HTTP
+        hostname: '**',
       },
     ],
+  },
+  webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
+    if (!isServer) {
+      config.resolve = {
+        ...config.resolve,
+        fallback: {
+          ...config.resolve?.fallback,
+          stream: false, // Ignora o módulo `stream`
+        },
+      };
+    }
+    return config;
   },
 };
 
 export default nextConfig;
+

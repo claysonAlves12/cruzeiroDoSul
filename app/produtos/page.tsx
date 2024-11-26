@@ -211,15 +211,6 @@ const ProductsPage: React.FC = () => {
               <IoAddCircle className="w-6 h-6" />
               <p>Produto</p>
             </div>
-
-            <div
-              onClick={() => router.push('/users')}
-              className="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition 
-              duration-300 flex gap-2 items-center cursor-pointer"
-            >
-              <IoAddCircle className="w-6 h-6" />
-              <p>Criar Usuario</p>
-            </div>
           </div>
         </div>
 
